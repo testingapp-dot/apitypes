@@ -1,104 +1,189 @@
-import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
+import { serve } from '@hono/node-server'
+import { query } from './db.ts'
 
 const app = new Hono()
 
-app.get('/', (c) => {
-  return c.html(`
+function layout(content: string) {
+  return `
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hono + HTMX</title>
+  <title>Todo App</title>
 
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f5;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #222;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
     }
 
     .card {
       background: white;
-      padding: 2rem;
-      width: 400px;
+      padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,.1);
+      box-shadow: 0 2px 10px rgba(0,0,0,.1);
     }
 
-    h1 {
-      margin-bottom: 1rem;
+    form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
     }
 
     button {
-      background: #2563eb;
-      color: white;
-      border: none;
-      padding: 0.75rem 1rem;
-      border-radius: 8px;
+      padding: 10px 16px;
       cursor: pointer;
     }
 
-    button:hover {
-      background: #1d4ed8;
+    ul {
+      list-style: none;
+      padding: 0;
     }
 
-    #result {
-      margin-top: 1rem;
-      padding: 1rem;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      min-height: 60px;
-      background: #fafafa;
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
     }
 
-    .success {
-      color: #16a34a;
-      font-weight: bold;
+    .done {
+      text-decoration: line-through;
+      color: gray;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
     }
   </style>
 </head>
 <body>
-
   <div class="card">
-    <h1>HonoJS + htmx</h1>
-
-    <button
-      hx-get="/hello"
-      hx-target="#result"
-      hx-swap="innerHTML">
-      Load Message
-    </button>
-
-    <div id="result">
-      Click the button...
-    </div>
+    ${content}
   </div>
-
 </body>
 </html>
+`
+}
+
+async function renderTodos() {
+  const rows = await query(`
+    SELECT *
+    FROM todos
+    ORDER BY id DESC
   `)
+
+  return `
+<ul>
+${rows
+  .map(
+    (todo: any) => `
+<li id="todo-${todo.id}">
+  <span class="${todo.completed ? 'done' : ''}">
+    ${todo.title}
+  </span>
+
+  <div class="actions">
+
+    <button
+      hx-post="/toggle/${todo.id}"
+      hx-target="#todos"
+      hx-swap="innerHTML">
+      ${todo.completed ? 'Undo' : 'Done'}
+    </button>
+
+    <button
+      hx-delete="/todos/${todo.id}"
+      hx-target="#todos"
+      hx-swap="innerHTML">
+      Delete
+    </button>
+
+  </div>
+</li>
+`
+  )
+  .join('')}
+</ul>
+`
+}
+
+app.get('/', async (c) => {
+  const todosHtml = await renderTodos()
+
+  return c.html(
+    layout(`
+      <h1>Todo App</h1>
+
+      <form
+        hx-post="/todos"
+        hx-target="#todos"
+        hx-swap="innerHTML">
+
+        <input
+          type="text"
+          name="title"
+          placeholder="New todo..."
+          required>
+
+        <button>Add</button>
+      </form>
+
+      <div id="todos">
+        ${todosHtml}
+      </div>
+    `)
+  )
 })
 
-app.get('/hello', (c) => {
-  return c.html(`
-    <p class="success">
-      Hello from Hono 🚀
-    </p>
-  `)
+app.post('/todos', async (c) => {
+  const body = await c.req.parseBody()
+
+  const title = String(body.title || '').trim()
+
+  if (title) {
+    await query(
+      'INSERT INTO todos (title) VALUES (?)',
+      [title]
+    )
+  }
+
+  return c.html(await renderTodos())
+})
+
+app.post('/toggle/:id', async (c) => {
+  const id = c.req.param('id')
+
+  await query(`
+    UPDATE todos
+    SET completed = NOT completed
+    WHERE id = ?
+  `, [id])
+
+  return c.html(await renderTodos())
+})
+
+app.delete('/todos/:id', async (c) => {
+  const id = c.req.param('id')
+
+  await query(
+    'DELETE FROM todos WHERE id = ?',
+    [id]
+  )
+
+  return c.html(await renderTodos())
 })
 
 serve({

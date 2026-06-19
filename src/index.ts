@@ -74,7 +74,7 @@ app.get('/', (c) => {
 <body>
 
   <div class="card">
-    <h1>Hono + HTMX</h1>
+    <h1>HonoJS + htmx</h1>
 
     <button
       hx-get="/hello"

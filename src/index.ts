@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
-import { query } from './db.ts'
+import { query } from './db.js'
 
 const app = new Hono()
 

@@ -1,6 +1,6 @@
 import mariadb from 'mariadb';
 export const pool = mariadb.createPool({
-    host: 'localhost',
+    host: '127.0.0.1',
     user: 'monopolyfifa',
     password: '123456Aamira*',
     database: 'nodejs',

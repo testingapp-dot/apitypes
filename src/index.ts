@@ -8,34 +8,82 @@ app.get('/', (c) => {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hono + HTMX</title>
 
-  <title>Hono + HTMX + Tailwind</title>
-
-  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-</head>
-<body class="bg-slate-100 min-h-screen flex items-center justify-center">
 
-  <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
-    <h1 class="text-3xl font-bold text-slate-800 mb-6">
-      Hono + HTMX
-    </h1>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #222;
+    }
+
+    .card {
+      background: white;
+      padding: 2rem;
+      width: 400px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    #result {
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      min-height: 60px;
+      background: #fafafa;
+    }
+
+    .success {
+      color: #16a34a;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Hono + HTMX</h1>
 
     <button
       hx-get="/hello"
       hx-target="#result"
-      hx-swap="innerHTML"
-      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
-    >
+      hx-swap="innerHTML">
       Load Message
     </button>
 
-    <div
-      id="result"
-      class="mt-4 p-4 border rounded-lg bg-slate-50"
-    >
+    <div id="result">
       Click the button...
     </div>
   </div>
@@ -47,9 +95,9 @@ app.get('/', (c) => {
 
 app.get('/hello', (c) => {
   return c.html(`
-    <div class="text-green-600 font-medium">
+    <p class="success">
       Hello from Hono 🚀
-    </div>
+    </p>
   `)
 })
 
